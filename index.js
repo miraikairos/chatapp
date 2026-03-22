@@ -1,24 +1,41 @@
-console.log("Server started");
-const io = require('socket.io')(8000, {
+const express = require('express');
+const http = require('http');
+
+const app = express();
+const server = http.createServer(app);
+
+const io = require('socket.io')(server, {
   cors: {
-    origin: "http://127.0.0.1:5500",
-    methods: ["GET", "POST"]
+    origin: "*"
   }
 });
 
-const users={};
+const users = {};
 
-io.on('connection', socket=>{
-  socket.on('new-user-joined', name =>{
-    console.log("New-user", name)
-    users[socket.id]=name;
-    socket.broadcast.emit('user-joined',name);
-  })
-  socket.on('send',message =>{
-    socket.broadcast.emit('receive', {
-  message: message,
-  name: users[socket.id]
-});
+io.on('connection', socket => {
+  console.log("User connected");
+
+  socket.on('new-user-joined', name => {
+    users[socket.id] = name;
+    socket.broadcast.emit('user-joined', name);
   });
-})
-  
+
+  socket.on('send', message => {
+    socket.broadcast.emit('receive', {
+      message: message,
+      name: users[socket.id]
+    });
+  });
+
+  socket.on('disconnect', () => {
+    socket.broadcast.emit('left', users[socket.id]);
+    delete users[socket.id];
+  });
+});
+
+// ✅ THIS IS THE IMPORTANT PART
+const PORT = process.env.PORT || 8000;
+
+server.listen(PORT, () => {
+  console.log("Server running on port", PORT);
+});
