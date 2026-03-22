@@ -3,6 +3,9 @@ const http = require('http');
 
 const app = express();
 const server = http.createServer(app);
+app.get('/', (req, res) => {
+  res.send("Chat server is running 🚀");
+});
 
 const io = require('socket.io')(server, {
   cors: {
