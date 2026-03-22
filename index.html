@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple Chat</title>
+
+<style>
+body{
+  margin:0;
+  font-family:"Segoe UI",sans-serif;
+  background:linear-gradient(135deg,#000,#1a1a1a);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+.chat-box{
+  width:400px;
+  height:600px;
+  background:#121212;
+  border-radius:20px;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.header{
+  padding:15px;
+  background:#1f1f1f;
+  color:white;
+}
+
+.messages{
+  flex:1;
+  padding:10px;
+  overflow-y:auto;
+}
+
+.message{
+  margin:8px 0;
+  padding:10px;
+  border-radius:15px;
+  max-width:70%;
+}
+
+.right{
+  background:#00ff9f;
+  margin-left:auto;
+}
+
+.left{
+  background:#2a2a2a;
+  color:white;
+}
+
+form{
+  display:flex;
+  padding:10px;
+  background:#1f1f1f;
+}
+
+input{
+  flex:1;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  outline:none;
+}
+
+button{
+  margin-left:10px;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  background:#00ff9f;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="chat-box">
+  <div class="header">Live Chat</div>
+
+  <div class="messages" id="messages"></div>
+
+  <form id="send-container">
+    <input type="text" id="messageInp" placeholder="Type message..." />
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<script src="http://localhost:8000/socket.io/socket.io.js"></script>
+<script>
+const socket = io('http://localhost:8000');
+
+const form = document.getElementById('send-container');
+const messageInput = document.getElementById('messageInp');
+const messageContainer = document.getElementById('messages');
+
+const append = (message, position) => {
+  const messageElement = document.createElement('div');
+  messageElement.innerText = message;
+  messageElement.classList.add('message');
+  messageElement.classList.add(position);
+  messageContainer.append(messageElement);
+  messageContainer.scrollTop = messageContainer.scrollHeight;
+};
+
+const username = prompt("Enter your name");
+socket.emit('new-user-joined', username);
+
+socket.on('user-joined', name => {
+  append(`${name} joined`, 'left');
+});
+
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+
+  const message = messageInput.value.trim();
+  if (!message) return;
+
+  append(`You: ${message}`, 'right');
+  socket.emit('send', message);
+
+  messageInput.value = '';
+});
+
+socket.on('receive', data => {
+  append(`${data.name}: ${data.message}`, 'left');
+});
+</script>
+
+</body>
+</html>
